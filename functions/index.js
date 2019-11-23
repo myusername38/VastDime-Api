@@ -80,6 +80,7 @@ app.post('/login', (req, res) => {
 app.post('/signup', (req, res) => {
     const newUser = {
         email: req.body.email, 
+        username: req.body.username,
         password: req.body.password,
     };
     let errors = {};
@@ -88,23 +89,36 @@ app.post('/signup', (req, res) => {
         errors.email = 'Email must not be empty'
     } else if (!isEmail(newUser.email)){
         errors.email = 'Must be a valid email address'
-    } 
+    } else if (isEmpty(newUser.username)) {
+        errors.username = 'Username must not be empty'
+    }
     if (Object.keys(errors).length > 0){
         return res.status(400).json(errors);
     } 
-    firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password)
+    db.doc(`/users/${newUser.username}`)
+    .get()
+    .then((doc) => {
+        if (doc.exists) {
+            return res.status(400).json({ message: 'This username is already taken' });
+        } else {
+            return firebase
+            .auth()
+            .createUserWithEmailAndPassword(newUser.email, newUser.password);
+        }
+    })
     .then(data => {
         userId = data.user.uid;
         return data.user.getIdToken();
     })
-    .then(idtoken => {
+    .then((idtoken) => {
         token = idtoken; 
         const userCredentials = {
+            username: newUser.username,
             email: newUser.email,
-            password: newUser.password,
             createdAt: new Date().toISOString(),
             userId
         };
+        return db.doc(`/users/${ newUser.username }`).set(userCredentials);
     }) 
     .then(() => {
         return res.status(201).json({ token })
