@@ -72,7 +72,6 @@ exports.addCode = (req, res) => {
 exports.getCode = (req, res) => {
     let username = req.query.username;
     let program = req.query.program;    
-    let tokenUsername = '';
     db.doc(`/users/${ username }/code/${ program }`)
     .get()
     .then(doc => {
@@ -88,8 +87,7 @@ exports.getCode = (req, res) => {
                     if (!decodedToken.email_verified) {
                         return res.status(400).json({ message: 'Please verify email' }); 
                     }
-                    username = decodedToken.name;
-                    if (tokenUsername === username) {
+                    if (decodedToken.name === username) {
                         return res.status(200).json({ program: doc.data() });
                     } else {
                         return res.status(400).json({ error: 'Not athorized to access this code' }); 
@@ -111,14 +109,16 @@ exports.deleteCode = (req, res) => {
     if (!req.headers.token) {
         return  res.status(400).json({ err: 'Must have a token' }); 
     }
+   
     const { valid, errors } = validateDeleteProgram(req.query);
+
+    let language = req.query.language;
+    let title = req.query.title;
 
     if (!valid) {
         return res.status(400).json(errors);
     }
     let username = '';
-    let language = req.query.langauge; 
-    let title = req.query.title;
 
     admin.auth().verifyIdToken(req.headers.token) 
     .then((decodedToken) => {
@@ -129,6 +129,7 @@ exports.deleteCode = (req, res) => {
         db.doc(`/users/${ username }/code/${ title }`)
         .delete()
         .then(() => {
+            console.log(title);
             db.doc(`/public/${ language }/code/${ username }-${ title }`)
             .delete()
         }).then(() => {
@@ -136,6 +137,7 @@ exports.deleteCode = (req, res) => {
         }) 
     })
     .catch((err) => {
+        console.log(err);
         return res.status(400).json({ err }); 
     });
 }
@@ -330,11 +332,12 @@ exports.getPublicCode = (req, res) => {
     if (!req.headers.token) {
         return  res.status(400).json({ err: 'Must have a token' }); 
     }
-
+    const params = req.query;
     let language = 'javascript';
 
-    if (req.query.language) {
-        langauge = req.query.langauge;
+    if (params.lang) {
+        language = params.lang;
+        console.log(language);
     }
     let offset = 0;
     if (req.query.offset) {

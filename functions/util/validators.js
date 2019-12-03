@@ -69,14 +69,11 @@ exports.validateDeleteProgram = (data) => {
     let errors = {};
     if (!data.title) {
         errors.title = 'Must have a program title';
-    }
-    if (isEmpty(data.title)) {
+    } else if (isEmpty(data.title)) {
         errors.title = 'Program title must not be emtpy';
-    }
-    if (!data.language) {
+    } else if (!data.language) {
         errors.language = 'Must have a language';
-    }
-    if (isEmpty(data.language)) {
+    } else if (isEmpty(data.language)) {
         errors.language = 'Language cannot be blank';
     }
     return {
@@ -89,8 +86,7 @@ exports.validatePrivateProgram = (data) => {
     let errors = {};
     if (!data.title) {
         errors.title = 'Must have a program title';
-    }
-    if (isEmpty(data.title)) {
+    } else if (isEmpty(data.title)) {
         errors.title = 'Program title must not be emtpy';
     }
     return {
